@@ -1,19 +1,14 @@
-import * as React from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
 import logo2 from "../img/logo2.png";
-import { Navigate, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 
 export default function MenuAppBar() {
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
 
   const navigate = useNavigate();
+
   return (
     <Box sx={{ flexGrow: 1, width: "100vw" }}>
       <AppBar position="static" sx={{ backgroundColor: "grey" }}>
