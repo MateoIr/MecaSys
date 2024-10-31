@@ -8,18 +8,34 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Slide from "@mui/material/Slide";
 import { IconButton } from "@mui/material";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import useDeleteTurn from "../hooks/useDEleteTurn";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function DialogDelete() {
+export default function DialogDelete({ id, refetch }) {
   const [open, setOpen] = React.useState(false);
+
+  const deleteTurnoMutation = useDeleteTurn();
 
   const handleClickOpen = () => {
     setOpen(true);
   };
 
+  const handleConfirm = () => {
+    console.log(id);
+
+    deleteTurnoMutation.mutate(id, {
+      onSuccess: () => {
+        refetch(); // Llama a refetch para actualizar la lista de turnos
+      },
+      onError: (error) => {
+        console.error("Error al eliminar el turno:", error);
+      },
+    });
+    setOpen(false); // Cierra el diálogo de confirma
+  };
   const handleClose = () => {
     setOpen(false);
   };
@@ -44,7 +60,7 @@ export default function DialogDelete() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancelar</Button>
-          <Button onClick={handleClose}>Confirmar</Button>
+          <Button onClick={handleConfirm}>Confirmar</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

@@ -1,10 +1,11 @@
 import { Box, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import React from "react";
 
-const SleectState = ({ state }) => {
+const SleectState = ({ state, set }) => {
   const [status, setStatus] = React.useState("");
 
   const handleChange = (event) => {
+    set(event.target.value);
     setStatus(event.target.value);
   };
   return (

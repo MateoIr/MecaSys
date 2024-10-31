@@ -18,12 +18,18 @@ function intersection(a, b) {
   return a.filter((value) => b.includes(value));
 }
 
-export default function TransferList({ services }) {
+export default function TransferList({
+  services,
+  idtoUse,
+  descripcionToUse,
+  register,
+  setValue,
+  name,
+}) {
   const [checked, setChecked] = React.useState([]);
   const [left, setLeft] = React.useState([]);
   const [right, setRight] = React.useState([]);
 
-  // useEffect para actualizar el estado de 'left' cuando 'services' cambia
   useEffect(() => {
     if (Array.isArray(services)) {
       setLeft(services);
@@ -34,11 +40,11 @@ export default function TransferList({ services }) {
 
   const leftChecked = intersection(
     checked,
-    left.map((service) => service.id)
+    left.map((service) => service[idtoUse])
   );
   const rightChecked = intersection(
     checked,
-    right.map((service) => service.id)
+    right.map((service) => service[idtoUse])
   );
 
   const handleToggle = (value) => () => {
@@ -54,51 +60,66 @@ export default function TransferList({ services }) {
     setChecked(newChecked);
   };
 
+  const updateValues = (newRight) => {
+    setValue(
+      name,
+      newRight.map((service) => service[idtoUse])
+    ); // Actualiza el valor en el formulario
+  };
+
   const handleAllRight = () => {
-    setRight(right.concat(left));
+    const allRight = left.concat(right);
+    setRight(allRight);
     setLeft([]);
+    updateValues(allRight); // Actualiza los valores en el formulario
   };
 
   const handleCheckedRight = () => {
-    setRight(
-      right.concat(leftChecked.map((id) => left.find((s) => s.id === id)))
+    const newRight = right.concat(
+      leftChecked.map((id) => left.find((s) => s[idtoUse] === id))
     );
+    setRight(newRight);
     setLeft(
       not(
         left,
-        leftChecked.map((id) => left.find((s) => s.id === id))
+        leftChecked.map((id) => left.find((s) => s[idtoUse] === id))
       )
     );
     setChecked(not(checked, leftChecked));
+    updateValues(newRight); // Actualiza los valores en el formulario
   };
 
   const handleCheckedLeft = () => {
-    setLeft(
-      left.concat(rightChecked.map((id) => right.find((s) => s.id === id)))
+    const newLeft = left.concat(
+      rightChecked.map((id) => right.find((s) => s[idtoUse] === id))
     );
+    setLeft(newLeft);
     setRight(not(right, rightChecked));
     setChecked(not(checked, rightChecked));
+    updateValues(newLeft); // Actualiza los valores en el formulario
   };
 
   const handleAllLeft = () => {
-    setLeft(left.concat(right));
+    const allLeft = left.concat(right);
+    setLeft(allLeft);
     setRight([]);
+    updateValues(allLeft); // Actualiza los valores en el formulario
   };
 
   const customList = (items) => (
     <Paper sx={{ width: 200, height: 230, overflow: "auto" }}>
       <List dense component="div" role="list">
         {items.map((service) => {
-          const labelId = `transfer-list-item-${service.id}-label`;
+          const labelId = `transfer-list-item-${service[idtoUse]}-label`;
           return (
             <ListItemButton
-              key={service.id}
+              key={service[idtoUse]}
               role="listitem"
-              onClick={handleToggle(service.id)}
+              onClick={handleToggle(service[idtoUse])}
             >
               <ListItemIcon>
                 <Checkbox
-                  checked={checked.includes(service.id)}
+                  checked={checked.includes(service[idtoUse])}
                   tabIndex={-1}
                   disableRipple
                   inputProps={{
@@ -108,7 +129,9 @@ export default function TransferList({ services }) {
               </ListItemIcon>
               <ListItemText
                 id={labelId}
-                primary={service.descripcion || "Descripción no disponible"}
+                primary={
+                  service[descripcionToUse] || "Descripción no disponible"
+                }
               />
             </ListItemButton>
           );

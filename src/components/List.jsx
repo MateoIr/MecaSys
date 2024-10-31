@@ -1,3 +1,4 @@
+import React from "react";
 import { styled } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -7,12 +8,39 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import EditIcon from "@mui/icons-material/Edit";
-import { IconButton } from "@mui/material";
+import { IconButton, CircularProgress } from "@mui/material";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import DialogState from "./DialogState";
 import DialogDelete from "./DialogDelete";
+import useGetTruns from "../hooks/useGetTurns";
+import useGetClients from "../hooks/useGetAllClients";
+import useGetMecanics from "../hooks/useGetAllMecanics";
+import { useNavigate } from "react-router-dom";
 
 const List = () => {
+  const { turns, refetch, errorTurns, loadinTurns } = useGetTruns({});
+  const { cleints, errorClients, loadingClients } = useGetClients();
+  const { mecanics, errorMecanics, loadinMecanics } = useGetMecanics();
+
+  const navigate = useNavigate();
+
+  // Verifica si se están cargando los datos de turnos, clientes o mecánicos
+  if (loadinTurns || loadingClients || loadinMecanics) {
+    return <CircularProgress />; // O cualquier otro indicador de carga
+  }
+
+  if (errorTurns) {
+    return <div>Error al cargar turnos: {errorTurns.message}</div>;
+  }
+
+  if (errorClients) {
+    return <div>Error al cargar clientes: {errorClients.message}</div>;
+  }
+
+  if (errorMecanics) {
+    return <div>Error al cargar mecánicos: {errorMecanics.message}</div>;
+  }
+
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: theme.palette.common.black,
@@ -27,86 +55,101 @@ const List = () => {
     "&:nth-of-type(odd)": {
       backgroundColor: theme.palette.action.hover,
     },
-    // hide last border
     "&:last-child td, &:last-child th": {
       border: 0,
     },
   }));
 
-  function createData(name, calories, fat, carbs, protein, estado) {
-    return { name, calories, fat, carbs, protein, estado };
-  }
+  const getClienteNombre = (clienteId) => {
+    const cliente = cleints.find((c) => c.idCliente === clienteId);
+    return cliente
+      ? `${cliente.nombre} ${cliente.apellido}`
+      : "Cliente no encontrado";
+  };
 
-  const rows = [
-    createData(
-      "Cambio de aceite",
-      "Aceite v.2",
-      "Mateo Iriso",
-      "22/12",
-      "22:30",
-      "Solicitado"
-    ),
-    createData("Alienado", "", "Mateo Iriso", "30/11", "21:30", "Pendiente"),
-    createData("Valanceado", "", "Mateo Iriso", "25/12", "7:30", "Confirmado"),
-    createData(
-      "Cambio de frenos",
-      "Frenos j4",
-      "Matias Laquiz",
-      "22/11",
-      "2:30",
-      "Cancelado"
-    ),
-    createData(
-      "Cambio de aceite",
-      "Aceite v.2",
-      "Matias Laquiz",
-      "22/11",
-      "7:30",
-      "Finalizado"
-    ),
-  ];
+  const getMecanicoNombre = (mecanicId) => {
+    const mecanico = mecanics.find((c) => c.idMecanico === mecanicId);
+    return mecanico
+      ? `${mecanico.nombre} ${mecanico.apellido}`
+      : "Mecánico no encontrado";
+  };
 
-  const estados = [
-    { id: 1, nombre: "Solicitado" },
-    { id: 2, nombre: "Pendiente" },
-    { id: 3, nombre: "Confirmado" },
-    { id: 4, nombre: "Cancelado" },
-    { id: 5, nombre: "Finalizado" },
-  ];
+  const tablaDatos = Array.isArray(turns)
+    ? turns.map((turno) => {
+        const clienteNombre = getClienteNombre(turno.cliente);
+        const servicios = turno.detalle.map((d) => d.servicio).filter(Boolean);
+        const repuestos = turno.detalle
+          .map((d) => d.nombreRepuesto)
+          .filter(Boolean);
+        const mecanicoNombre = getMecanicoNombre(turno.mecanico);
+        const fecha = turno.fecha;
+        const hora = turno.hora;
+        const estado = turno.estadoTruno;
+
+        // Construir el detalle solo si hay elementos en servicios o repuestos
+        const detalle = [
+          servicios.length > 0 ? servicios.join(", ") : null,
+          repuestos.length > 0 ? repuestos.join(", ") : null,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        return {
+          cliente: clienteNombre,
+          detalle: detalle, // Asignar el detalle procesado aquí
+          mecanico: mecanicoNombre,
+          dia: fecha,
+          hora: hora,
+          estado: estado,
+          id: turno.idturno, // Asegúrate de asignar el id aquí
+        };
+      })
+    : [];
+
+  const estados = {
+    1: "Solicitado",
+    2: "Pendiente a confirmar",
+    3: "Confirmado",
+    4: "Cancelado",
+    5: "Finalizado",
+  };
 
   return (
     <TableContainer component={Paper}>
       <Table sx={{ minWidth: 700 }} aria-label="customized table">
         <TableHead>
           <TableRow>
-            <StyledTableCell>Servico</StyledTableCell>
-            <StyledTableCell>Repuesto</StyledTableCell>
             <StyledTableCell>Cliente</StyledTableCell>
+            <StyledTableCell>Detalle</StyledTableCell>
+            <StyledTableCell>Mecánico</StyledTableCell>
             <StyledTableCell>Dia / Horario</StyledTableCell>
             <StyledTableCell>Estado</StyledTableCell>
             <StyledTableCell>Opciones</StyledTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row) => (
-            <StyledTableRow key={row.name}>
-              <StyledTableCell>{row.name}</StyledTableCell>
-              <StyledTableCell>{row.calories}</StyledTableCell>
-              <StyledTableCell>{row.fat}</StyledTableCell>
+          {tablaDatos.map((row) => (
+            <StyledTableRow key={row.id}>
+              <StyledTableCell>{row.cliente}</StyledTableCell>
+              <StyledTableCell>{row.detalle}</StyledTableCell>
+              <StyledTableCell>{row.mecanico}</StyledTableCell>
               <StyledTableCell>
-                {row.carbs} {row.protein}
+                {row.dia} {row.hora}
               </StyledTableCell>
-
               <StyledTableCell>
-                <DialogState />
-                {row.estado}
+                <DialogState refetch={refetch} id={row.id} />
+                {estados[row.estado]}{" "}
               </StyledTableCell>
-
               <StyledTableCell>
-                <IconButton color="primary" aria-label="delete">
+                <IconButton
+                  color="primary"
+                  aria-label="edit"
+                  onClick={() => navigate(`/turno/actualizar/${row.id}`)}
+                >
                   <EditIcon />
                 </IconButton>
-                <DialogDelete />
+                <DialogDelete id={row.id} refetch={refetch} />{" "}
+                {/* Cambia a row.id */}
               </StyledTableCell>
             </StyledTableRow>
           ))}
