@@ -4,8 +4,6 @@ import {
   CircularProgress,
   FormControl,
   Grid,
-  InputLabel,
-  List,
   MenuItem,
   Select,
   TextField,
@@ -15,7 +13,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import TransferList from "../components/TransferListComponet";
 import useGetClients from "../hooks/useGetAllClients";
 import useGetMecanics from "../hooks/useGetAllMecanics";
@@ -26,7 +23,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import useSaveTurn from "../hooks/useSaveTurn";
 import dayjs from "dayjs";
 import { useParams } from "react-router-dom";
 import useGetUnicTrun from "../hooks/useGetUnicTurn";
@@ -65,8 +61,8 @@ const UpdateTurn = () => {
   const schema = yup.object().shape({
     cliente: yup.string().required("ingrese un valor"),
     mecanico: yup.string().required("ingrese un valor"),
-    servicio: yup.array().of(yup.string()),
-    repuesto: yup.array().of(yup.string()),
+    servicio: yup.array().of(yup.string()).nullable(), // Permite que sea nulo o vacío
+    repuesto: yup.array().of(yup.string()).nullable(), // Permite que sea nulo o vacío
     vehiculo: yup.string().required("El número de teléfono es requerido"),
     fecha: yup.string().required("El número de teléfono es requerido"),
     hora: yup.string().required("ingrese un valor"),
@@ -74,6 +70,7 @@ const UpdateTurn = () => {
   const {
     register,
     handleSubmit,
+    watch,
     setValue,
     formState: { errors },
   } = useForm({
@@ -88,14 +85,8 @@ const UpdateTurn = () => {
       setValue("vehiculo", trun.vehiculo);
       setValue("fecha", dayjs(trun.fecha, "DD/MM/YYYY").format("YYYY-MM-DD"));
       setValue("hora", trun.hora);
-      setValue(
-        "servicio",
-        trun.detalle.map((d) => d.servicio)
-      );
-      setValue(
-        "repuesto",
-        trun.detalle.map((d) => d.nombreRepuesto)
-      );
+      setValue("servicio", []);
+      setValue("repuesto", []);
     }
   }, [trun, setValue]);
 
@@ -140,12 +131,13 @@ const UpdateTurn = () => {
                 {...register("cliente")}
                 labelId="demo-simple-select-filled-label"
                 id="demo-simple-select-filled"
-                onChange={handleChangeClient}
-                value={trun?.cliente || ""}
+                onChange={(event) => {
+                  handleChangeClient(event); // Actualiza el ID del cliente seleccionado
+                  setValue("cliente", event.target.value); // Asegura que el formulario actualice el valor
+                }}
+                value={watch("cliente") || ""} // Usa watch para enlazar el valor dinámicamente
+                disabled={true}
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadingClients ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
@@ -171,28 +163,27 @@ const UpdateTurn = () => {
           <Grid xs={6} md={3}>
             <FormControl variant="filled" sx={{ pt: 1, minWidth: 150 }}>
               <Select
+                {...register("mecanico")}
                 labelId="demo-simple-select-filled-label"
                 id="demo-simple-select-filled"
-                {...register("mecanico")}
-                name="mecanico"
-                value={trun?.mecanico || ""}
+                onChange={(event) => {
+                  setValue("mecanico", event.target.value); // Asegura que el formulario actualice el valor
+                }}
+                value={watch("mecanico") || ""} // Usa watch para enlazar el valor dinámicamente
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadinMecanics ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
                   </MenuItem>
                 ) : errorMecanics ? (
-                  <MenuItem disabled>Error loading clients</MenuItem>
+                  <MenuItem disabled>Error loading mechanics</MenuItem>
                 ) : (
-                  mecanics.map((mecanics) => (
+                  mecanics.map((mecanico) => (
                     <MenuItem
-                      key={mecanics.idMecanico}
-                      value={mecanics.idMecanico}
+                      key={mecanico.idMecanico}
+                      value={mecanico.idMecanico}
                     >
-                      {mecanics.nombre} {mecanics.apellido}
+                      {mecanico.nombre} {mecanico.apellido}
                     </MenuItem>
                   ))
                 )}
@@ -212,17 +203,17 @@ const UpdateTurn = () => {
                 id="demo-simple-select-filled"
                 {...register("vehiculo")}
                 name="vehiculo"
-                value={trun?.vehiculo || ""}
+                onChange={(event) => {
+                  setValue("vehiculo", event.target.value); // Asegura que el formulario actualice el valor seleccionado
+                }}
+                value={watch("vehiculo") || ""} // Usa watch para enlazar el valor dinámicamente
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadinCar ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
                   </MenuItem>
                 ) : errorCar ? (
-                  <MenuItem disabled>Error loading clients</MenuItem>
+                  <MenuItem disabled>Error loading vehicles</MenuItem>
                 ) : (
                   car.map((car) => (
                     <MenuItem key={car.idVehiculo} value={car.idVehiculo}>
@@ -231,7 +222,9 @@ const UpdateTurn = () => {
                   ))
                 )}
               </Select>
-              {errors.auto && <p style={{ color: "red" }}>complete el campo</p>}
+              {errors.vehiculo && (
+                <p style={{ color: "red" }}>Complete el campo</p>
+              )}
             </FormControl>
           </Grid>
 

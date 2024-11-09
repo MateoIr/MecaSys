@@ -43,8 +43,9 @@ const CreateTrun = () => {
   const schema = yup.object().shape({
     cliente: yup.string().required("ingrese un valor"),
     mecanico: yup.string().required("ingrese un valor"),
-    servicio: yup.array().of(yup.string()),
-    repuesto: yup.array().of(yup.string()),
+    servicio: yup.array().of(yup.string()).nullable(), // Permite que sea nulo o vacío
+    repuesto: yup.array().of(yup.string()).nullable(), // Permite que sea nulo o vacío
+
     vehiculo: yup.string().required("El número de teléfono es requerido"),
     fecha: yup.string().required("El número de teléfono es requerido"),
     hora: yup.string().required("ingrese un valor"),
@@ -54,10 +55,24 @@ const CreateTrun = () => {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
   });
+  useEffect(() => {
+    // Verifica si no hay nada en los campos servicio o repuesto, y si es el caso, asigna []
+    const currentServicio = getValues("servicio");
+    const currentRepuesto = getValues("repuesto");
+
+    if (!currentServicio || currentServicio.length === 0) {
+      setValue("servicio", []);
+    }
+    if (!currentRepuesto || currentRepuesto.length === 0) {
+      setValue("repuesto", []);
+    }
+  }, [getValues, setValue]);
+
   const onSubmit = (data) => {
     console.log("onSubmit ejecutado");
     console.log(data);
@@ -101,9 +116,6 @@ const CreateTrun = () => {
                 id="demo-simple-select-filled"
                 onChange={handleChangeClient}
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadingClients ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
@@ -134,9 +146,6 @@ const CreateTrun = () => {
                 {...register("mecanico")}
                 name="mecanico"
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadinMecanics ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
@@ -170,9 +179,6 @@ const CreateTrun = () => {
                 {...register("vehiculo")}
                 name="vehiculo"
               >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
                 {loadinCar ? (
                   <MenuItem disabled>
                     <CircularProgress size={24} />
