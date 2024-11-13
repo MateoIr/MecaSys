@@ -65,7 +65,18 @@ const UpdateTurn = () => {
     repuesto: yup.array().of(yup.string()).nullable(), // Permite que sea nulo o vacío
     vehiculo: yup.string().required("El número de teléfono es requerido"),
     fecha: yup.string().required("El número de teléfono es requerido"),
-    hora: yup.string().required("ingrese un valor"),
+    hora: yup
+      .string()
+      .required("Ingrese un valor")
+      .test(
+        "valid-time",
+        "La hora debe estar entre las 6:00 am y las 11:59 pm",
+        (value) => {
+          if (!value) return false;
+          const [hours, minutes] = value.split(":").map(Number);
+          return hours >= 6 && hours < 24; // permite horas entre las 6:00 y las 23:59
+        }
+      ),
   });
   const {
     register,
@@ -84,15 +95,17 @@ const UpdateTurn = () => {
       setValue("mecanico", trun.mecanico);
       setValue("vehiculo", trun.vehiculo);
       setValue("fecha", dayjs(trun.fecha, "DD/MM/YYYY").format("YYYY-MM-DD"));
-      setValue("hora", trun.hora);
+      const formattedHora = dayjs(trun.hora, "HH:mm:ss").format("HH:mm:ss");
+      setValue("hora", formattedHora); // Establecer el valor de hora en el formulario en el formato esperado
+      setSelectedTime(dayjs(trun.hora, "HH:mm:ss")); // Asegura que el `TimePicker` reciba un objeto Dayjs
+
       setValue("servicio", []);
       setValue("repuesto", []);
     }
   }, [trun, setValue]);
 
   const onSubmit = (data) => {
-    console.log("onSubmit ejecutado");
-    console.log(data);
+    console.log(schema.hora);
     createUpdateTurn({ data, id: idToSearch }); // Llama a createTurn con el objeto data directamente
   };
   const handleChangeClient = (event) => {
@@ -268,12 +281,14 @@ const UpdateTurn = () => {
                   <TextField
                     {...params}
                     error={!!errors.hora}
-                    helperText={errors.hora ? "Complete el campo" : ""}
+                    helperText={errors.hora ? errors.hora.message : ""}
                   />
                 )}
               />
             </LocalizationProvider>
-            {errors.hora && <p style={{ color: "red" }}>Complete el campo</p>}
+            {errors.hora && (
+              <p style={{ color: "red" }}>{errors.hora.message}</p>
+            )}
           </Grid>
 
           <Grid xs={12}>
@@ -311,7 +326,7 @@ const UpdateTurn = () => {
               type="submit"
               onClick={handleSubmit(onSubmit)}
             >
-              Crear Turno
+              Modificar Turno
             </Button>
           </Grid>
         </Grid>
